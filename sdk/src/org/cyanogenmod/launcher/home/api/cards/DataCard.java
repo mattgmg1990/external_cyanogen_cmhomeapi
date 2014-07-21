@@ -329,6 +329,19 @@ public class DataCard extends PublishableCard {
             allCards.add(dataCard);
         }
 
+        cursor.close();
+
+        // Retrieve all DataCardImages for each DataCard.
+        // Doing this in a separate loop since each iteration
+        // will also be querying the ContentProvider.
+        for (DataCard card : allCards) {
+            List<DataCardImage> images = DataCardImage
+                    .getPublishedDataCardImagesForDataCardId(context, card.getId());
+            for (DataCardImage image : images) {
+                card.addDataCardImage(image);
+            }
+        }
+
         return allCards;
     }
 }

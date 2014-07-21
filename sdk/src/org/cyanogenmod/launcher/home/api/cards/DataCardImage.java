@@ -72,6 +72,7 @@ public class DataCardImage extends PublishableCard {
                 allImages.add(image);
             }
         }
+        cursor.close();
         return allImages;
     }
 
@@ -96,6 +97,7 @@ public class DataCardImage extends PublishableCard {
                 allImages.add(image);
             }
         }
+        cursor.close();
         return allImages;
     }
 }

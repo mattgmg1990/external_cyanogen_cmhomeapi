@@ -94,6 +94,8 @@ public abstract class PublishableCard {
                                               mICmHomeContract.getIdColumnName() + " = ?",
                                               new String[]{Integer.toString(getId())},
                                               null);
-        return cursor.getCount() > 0;
+        int cursorCount = cursor.getCount();
+        cursor.close();
+        return cursorCount > 0;
     }
 }
