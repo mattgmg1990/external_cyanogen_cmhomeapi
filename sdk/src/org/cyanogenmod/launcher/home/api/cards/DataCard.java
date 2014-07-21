@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.text.TextUtils;
 import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ public class DataCard {
     private static final int PRIORITY_MID  = 2;
     private static final int PRIORITY_LOW  = 3;
 
-    private int    mId;
+    private int    mId = -1;
     private String mSubject;
     private Date   mContentCreatedDate;
     private Date   mCreatedDate;
@@ -168,7 +169,48 @@ public class DataCard {
     }
 
     public void publish(Context context) {
-        ContentResolver contentResolver  = context.getContentResolver();
+        boolean updated = false;
+        // If we have an ID, try to update that row first.
+        if (getId() != -1) {
+            updated = update(context);
+        }
+
+        // If the update could not succeed, either this card never existed,
+        // or was deleted. Either way, create a new row for this card.
+        if (!updated) {
+            ContentResolver contentResolver = context.getContentResolver();
+
+            ContentValues values = getContentValues();
+
+            Uri result = contentResolver.insert(CmHomeContract.DataCard.CONTENT_URI, values);
+            // Store the resulting ID
+            setId(Integer.parseInt(result.getLastPathSegment()));
+        }
+    }
+
+    /**
+     * Updates an existing row in the ContentProvider that represents this card.
+     * This will update every column at once.
+     * @param context A Context object to retrieve the ContentResolver
+     * @return true if the update successfully updates a row, false otherwise.
+     */
+    private boolean update(Context context) {
+        if (getId() == -1) {
+            return false;
+        }
+
+        ContentResolver contentResolver = context.getContentResolver();
+        int rows = contentResolver.update(CmHomeContract.DataCard.CONTENT_URI,
+                                   getContentValues(),
+                                   CmHomeContract.DataCard._ID + " = " + getId(),
+                                   new String[]{});
+
+        // We must have updated more than one row
+        return rows > 0;
+
+    }
+
+    private ContentValues getContentValues() {
         ContentValues values = new ContentValues();
 
         values.put(CmHomeContract.DataCard.SUBJECT_COL, getSubject());
@@ -195,8 +237,6 @@ public class DataCard {
         values.put(CmHomeContract.DataCard.PRIORITY_COL,
                    getAction2Uri().toString());
 
-        Uri result = contentResolver.insert(CmHomeContract.DataCard.CONTENT_URI, values);
-        // Store the resulting ID
-        setId(Integer.parseInt(result.getLastPathSegment()));
+        return values;
     }
 }
