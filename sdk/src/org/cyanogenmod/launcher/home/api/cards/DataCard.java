@@ -1,23 +1,21 @@
 package org.cyanogenmod.launcher.home.api.cards;
 
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
-import android.text.TextUtils;
 import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class DataCard {
+public class DataCard extends PublishableCard {
     private static final int PRIORITY_HIGH = 1;
     private static final int PRIORITY_MID  = 2;
     private static final int PRIORITY_LOW  = 3;
+    private static final CmHomeContract.ICmHomeContract sContract =
+            new CmHomeContract.DataCard();
 
-    private int    mId = -1;
     private String mSubject;
     private Date   mContentCreatedDate;
     private Date   mCreatedDate;
@@ -31,17 +29,20 @@ public class DataCard {
     private Uri    mAction1Uri;
     private String mAction2Text;
     private Uri    mAction2Uri;
-    private int    mPriority = 3;
+    private int mPriority = 3;
 
     private List<DataCardImage> mImages = new ArrayList<DataCardImage>();
 
     public DataCard(String subject, Date contentCreatedDate) {
+        super(sContract);
+
         mSubject = subject;
         mContentCreatedDate = contentCreatedDate;
     }
 
     public void addDataCardImage(Uri uri) {
-        mImages.add(new DataCardImage(getId(), uri));
+        DataCardImage image = new DataCardImage(getId(), uri);
+        mImages.add(image);
     }
 
     public void addDataCardImage(DataCardImage image) {
@@ -54,14 +55,6 @@ public class DataCard {
 
     public void removeDataCardImage(DataCardImage image) {
         mImages.remove(image);
-    }
-
-    public int getId() {
-        return mId;
-    }
-
-    private void setId(int id) {
-        mId = id;
     }
 
     public Date getCreatedDate() {
@@ -168,23 +161,12 @@ public class DataCard {
         this.mPriority = priority;
     }
 
+    @Override
     public void publish(Context context) {
-        boolean updated = false;
-        // If we have an ID, try to update that row first.
-        if (getId() != -1) {
-            updated = update(context);
-        }
+        super.publish(context);
 
-        // If the update could not succeed, either this card never existed,
-        // or was deleted. Either way, create a new row for this card.
-        if (!updated) {
-            ContentResolver contentResolver = context.getContentResolver();
-
-            ContentValues values = getContentValues();
-
-            Uri result = contentResolver.insert(CmHomeContract.DataCard.CONTENT_URI, values);
-            // Store the resulting ID
-            setId(Integer.parseInt(result.getLastPathSegment()));
+        for (DataCardImage image : mImages) {
+            image.publish(context);
         }
     }
 
@@ -194,23 +176,38 @@ public class DataCard {
      * @param context A Context object to retrieve the ContentResolver
      * @return true if the update successfully updates a row, false otherwise.
      */
-    private boolean update(Context context) {
-        if (getId() == -1) {
-            return false;
+    protected boolean update(Context context) {
+        boolean updated = super.update(context);
+        if (updated) {
+            // Update all associated images as well
+            for (DataCardImage image : mImages) {
+                image.publish(context);
+            }
         }
 
-        ContentResolver contentResolver = context.getContentResolver();
-        int rows = contentResolver.update(CmHomeContract.DataCard.CONTENT_URI,
-                                   getContentValues(),
-                                   CmHomeContract.DataCard._ID + " = " + getId(),
-                                   new String[]{});
-
-        // We must have updated more than one row
-        return rows > 0;
-
+        return updated;
     }
 
-    private ContentValues getContentValues() {
+    /**
+     * Removes this DataCard from the feed, so that it is no longer visible to the user.
+     * @param context The context of the publishing application.
+     * @return True if the card was successfully unpublished, false otherwise.
+     */
+    @Override
+    public boolean unpublish(Context context) {
+        boolean deleted = super.unpublish(context);
+        if (deleted) {
+            // Delete all associated images as well
+            for (DataCardImage image : mImages) {
+                image.unpublish(context);
+            }
+        }
+
+        return deleted;
+    }
+
+    @Override
+    protected ContentValues getContentValues() {
         ContentValues values = new ContentValues();
 
         values.put(CmHomeContract.DataCard.SUBJECT_COL, getSubject());

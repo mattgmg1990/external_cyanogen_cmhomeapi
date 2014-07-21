@@ -11,7 +11,7 @@ public class CmHomeContract {
     public static final Uri CONTENT_URI =
             Uri.parse("content://" + AUTHORITY);
 
-    public static final class DataCard implements BaseColumns {
+    public static final class DataCard implements BaseColumns, ICmHomeContract {
         public static final String SUBJECT_COL = "subject";
         public static final String DATE_CONTENT_CREATED_COL = "date_content_created";
         public static final String DATE_CREATED_COL = "date_created";
@@ -46,9 +46,19 @@ public class CmHomeContract {
 
         public static final String SORT_ORDER_DEFAULT =
                 PRIORITY_COL + " ASC";
+
+        @Override
+        public Uri getContentUri() {
+            return CONTENT_URI;
+        }
+
+        @Override
+        public String getIdColumnName() {
+            return _ID;
+        }
     }
 
-    public static final class DataCardImage implements BaseColumns {
+    public static final class DataCardImage implements BaseColumns, ICmHomeContract {
         public static final String DATA_CARD_ID_COL = "data_card_id";
         public static final String IMAGE_URI_COL = "image_uri";
 
@@ -68,5 +78,20 @@ public class CmHomeContract {
 
         public static final String SORT_ORDER_DEFAULT =
                 DATA_CARD_ID_COL + " ASC";
+
+        @Override
+        public Uri getContentUri() {
+            return CONTENT_URI;
+        }
+
+        @Override
+        public String getIdColumnName() {
+            return _ID;
+        }
+    }
+
+    public interface ICmHomeContract {
+        public Uri getContentUri();
+        public String getIdColumnName();
     }
 }
