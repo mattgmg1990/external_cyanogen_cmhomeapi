@@ -23,11 +23,11 @@ public abstract class PublishableCard {
         return mId;
     }
 
-    private void setId(int id) {
+    protected void setId(int id) {
         mId = id;
     }
 
-    public void publish(Context context) {
+    public boolean publish(Context context) {
         boolean updated = false;
         // If we have an ID, try to update that row first.
         if (getId() != -1) {
@@ -45,6 +45,8 @@ public abstract class PublishableCard {
             // Store the resulting ID
             setId(Integer.parseInt(result.getLastPathSegment()));
         }
+
+        return updated;
     }
 
     protected abstract ContentValues getContentValues();

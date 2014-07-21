@@ -1,9 +1,13 @@
 package org.cyanogenmod.launcher.home.api.cards;
 
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.text.TextUtils;
 import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,6 +37,10 @@ public class DataCard extends PublishableCard {
 
     private List<DataCardImage> mImages = new ArrayList<DataCardImage>();
 
+    private DataCard() {
+        super(sContract);
+    }
+
     public DataCard(String subject, Date contentCreatedDate) {
         super(sContract);
 
@@ -43,6 +51,14 @@ public class DataCard extends PublishableCard {
     public void addDataCardImage(Uri uri) {
         DataCardImage image = new DataCardImage(getId(), uri);
         mImages.add(image);
+    }
+
+    private void setCreatedDate(Date date) {
+        mCreatedDate = date;
+    }
+
+    private void setLastModifiedDate(Date date) {
+        mLastModifiedDate = date;
     }
 
     public void addDataCardImage(DataCardImage image) {
@@ -162,12 +178,20 @@ public class DataCard extends PublishableCard {
     }
 
     @Override
-    public void publish(Context context) {
-        super.publish(context);
+    public boolean publish(Context context) {
+        boolean updated = super.publish(context);
+
+        if (!updated) {
+            // Initialize the created date and modified date to now.
+            mCreatedDate = new Date();
+            mLastModifiedDate = new Date();
+        }
 
         for (DataCardImage image : mImages) {
             image.publish(context);
         }
+
+        return updated;
     }
 
     /**
@@ -235,5 +259,76 @@ public class DataCard extends PublishableCard {
                    getAction2Uri().toString());
 
         return values;
+    }
+
+    public static List<DataCard> getAllPublishedDataCards(Context context) {
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor = contentResolver.query(CmHomeContract.DataCard.CONTENT_URI,
+                                              CmHomeContract.DataCard.PROJECTION_ALL,
+                                              null,
+                                              null,
+                                              CmHomeContract.DataCard.DATE_CREATED_COL);
+
+        List<DataCard> allCards = new ArrayList<DataCard>();
+        while (cursor.moveToNext()) {
+            DataCard dataCard = new DataCard();
+
+            dataCard.setId(cursor.getInt(cursor.getColumnIndex(CmHomeContract.DataCard._ID)));
+            long createdTime = cursor.getLong(cursor.getColumnIndex(CmHomeContract.DataCard
+                                                                    .DATE_CREATED_COL));
+            dataCard.setCreatedDate(new Date(createdTime));
+            long modifiedTime = cursor.getLong(cursor.getColumnIndex(CmHomeContract.DataCard
+                                                                     .LAST_MODIFIED_COL));
+            dataCard.setLastModifiedDate(new Date(modifiedTime));
+            long contentCreatedTime = cursor.getLong(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.DATE_CONTENT_CREATED_COL));
+            dataCard.setContentCreatedDate(new Date(contentCreatedTime));
+            dataCard.setSubject(cursor.getString(cursor.getColumnIndex(CmHomeContract.DataCard
+                                                                               .SUBJECT_COL)));
+            String contentSourceUriString =
+                    cursor.getString(cursor.getColumnIndex(
+                            CmHomeContract.DataCard.CONTENT_SOURCE_IMAGE_URI_COL));
+
+            if (!TextUtils.isEmpty(contentSourceUriString)) {
+                dataCard.setContentSourceImageUri(Uri.parse(contentSourceUriString));
+            }
+
+            String avatarImageUriString =
+                    cursor.getString(cursor.getColumnIndex(
+                            CmHomeContract.DataCard.AVATAR_IMAGE_URI_COL));
+            if (!TextUtils.isEmpty(avatarImageUriString)) {
+                dataCard.setAvatarImageUri(Uri.parse(avatarImageUriString));
+            }
+
+            dataCard.setTitle(cursor.getString(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.TITLE_TEXT_COL)));
+            dataCard.setSmallText(
+                    cursor.getString(cursor.getColumnIndex(
+                            CmHomeContract.DataCard.SMALL_TEXT_COL)));
+            dataCard.setBodyText(cursor.getString(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.BODY_TEXT_COL)));
+            dataCard.setAction1Text(
+                    cursor.getString(cursor.getColumnIndex(
+                            CmHomeContract.DataCard.ACTION_1_TEXT_COL)));
+
+            String action1UriString = cursor.getString(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.ACTION_1_TEXT_COL));
+            if (!TextUtils.isEmpty(action1UriString)) {
+                dataCard.setAction1Uri(Uri.parse(action1UriString));
+            }
+
+            dataCard.setAction2Text(cursor.getString(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.ACTION_2_TEXT_COL)));
+
+            String action2UriString = cursor.getString(
+                    cursor.getColumnIndex(CmHomeContract.DataCard.ACTION_2_URI_COL));
+            if (!TextUtils.isEmpty(action2UriString)) {
+                dataCard.setAction2Uri(Uri.parse(action2UriString));
+            }
+
+            allCards.add(dataCard);
+        }
+
+        return allCards;
     }
 }
