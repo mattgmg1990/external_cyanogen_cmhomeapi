@@ -30,6 +30,11 @@ public class CmHomeContract {
         public static Uri CONTENT_URI =
                 Uri.withAppendedPath(CmHomeContract.CONTENT_URI, "datacard");
 
+        public static String LIST_INSERT_UPDATE_URI_PATH = "datacard";
+        public static String SINGLE_ROW_INSERT_UPDATE_URI_PATH = "datacard/#";
+        public static String SINGLE_ROW_DELETE_URI_PATH = "/datacard/delete";
+        public static String SINGLE_ROW_DELETE_URI_PATH_MATCH = "/datacard/delete/#";
+
         public static final String CONTENT_TYPE =
                 ContentResolver.CURSOR_DIR_BASE_TYPE +
                 "/org.cyanogenmod.home.api.datacard";
@@ -64,6 +69,11 @@ public class CmHomeContract {
 
         public static Uri CONTENT_URI =
                 Uri.withAppendedPath(CmHomeContract.CONTENT_URI, "datacardimage");
+
+        public static String LIST_INSERT_UPDATE_URI_PATH = "datacardimage";
+        public static String SINGLE_ROW_INSERT_UPDATE_URI_PATH = "datacardimage/#";
+        public static String SINGLE_ROW_DELETE_URI_PATH = "/datacardimage/delete";
+        public static String SINGLE_ROW_DELETE_URI_PATH_MATCH = "/datacardimage/delete/#";
 
         public static final String CONTENT_TYPE =
                 ContentResolver.CURSOR_DIR_BASE_TYPE +
