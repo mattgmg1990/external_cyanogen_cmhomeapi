@@ -279,8 +279,16 @@ public class DataCard extends PublishableCard {
     }
 
     public static List<DataCard> getAllPublishedDataCards(Context context) {
+        return getAllPublishedDataCards(context,
+                                        CmHomeContract.DataCard.CONTENT_URI,
+                                        CmHomeContract.DataCardImage.CONTENT_URI);
+    }
+
+    public static List<DataCard> getAllPublishedDataCards(Context context,
+                                                          Uri dataCardContentUri,
+                                                          Uri dataCardImageContentUri) {
         ContentResolver contentResolver = context.getContentResolver();
-        Cursor cursor = contentResolver.query(CmHomeContract.DataCard.CONTENT_URI,
+        Cursor cursor = contentResolver.query(dataCardContentUri,
                                               CmHomeContract.DataCard.PROJECTION_ALL,
                                               null,
                                               null,
@@ -353,7 +361,9 @@ public class DataCard extends PublishableCard {
         // will also be querying the ContentProvider.
         for (DataCard card : allCards) {
             List<DataCardImage> images = DataCardImage
-                    .getPublishedDataCardImagesForDataCardId(context, card.getId());
+                    .getPublishedDataCardImagesForDataCardId(context,
+                                                             dataCardImageContentUri,
+                                                             card.getId());
             for (DataCardImage image : images) {
                 card.addDataCardImage(image);
             }

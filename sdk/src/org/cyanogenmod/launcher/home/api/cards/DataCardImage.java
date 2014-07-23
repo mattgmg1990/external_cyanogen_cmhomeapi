@@ -81,8 +81,16 @@ public class DataCardImage extends PublishableCard {
 
     public static List<DataCardImage> getPublishedDataCardImagesForDataCardId(Context context,
                                                                               long dataCardId) {
+        return getPublishedDataCardImagesForDataCardId(context,
+                                                       CmHomeContract.DataCardImage.CONTENT_URI,
+                                                       dataCardId);
+    }
+
+    public static List<DataCardImage> getPublishedDataCardImagesForDataCardId(Context context,
+                                                                              Uri contentUri,
+                                                                              long dataCardId) {
         ContentResolver contentResolver = context.getContentResolver();
-        Cursor cursor = contentResolver.query(CmHomeContract.DataCardImage.CONTENT_URI,
+        Cursor cursor = contentResolver.query(contentUri,
                                           CmHomeContract.DataCardImage.PROJECTION_ALL,
                                           CmHomeContract.DataCardImage.DATA_CARD_ID_COL + " = ?",
                                           new String[]{Long.toString(dataCardId)},
