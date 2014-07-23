@@ -61,6 +61,7 @@ public class CmHomeDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         database.execSQL(DATA_CARD_TABLE_CREATE);
+        database.execSQL(DATA_CARD_UPDATE_TIME_TRIGGER);
         database.execSQL(DATA_CARD_IMAGE_TABLE_CREATE);
     }
 
