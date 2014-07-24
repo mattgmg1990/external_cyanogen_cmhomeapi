@@ -1,4 +1,4 @@
-package org.cyanogenmod.launcher.home.cmhomeapi;
+package org.cyanogenmod.launcher.home.api;
 
 import android.app.Service;
 import android.content.ContentResolver;
@@ -11,6 +11,7 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -35,6 +36,8 @@ public class CMHomeApiService extends Service {
     private static final int    DATA_CARD_IMAGE_ITEM         = 5;
     private static final int    DATA_CARD_IMAGE_DELETE_ITEM  = 6;
 
+    private final IBinder mBinder = new LocalBinder();
+
     private HashMap<String, ProviderInfo> mProviders = new HashMap<String, ProviderInfo>();
     private HashMap<String, LongSparseArray<DataCard>> mCards = new HashMap<String,
                                                                   LongSparseArray<DataCard>>();
@@ -48,8 +51,7 @@ public class CMHomeApiService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return mBinder;
     }
 
     @Override
@@ -107,9 +109,9 @@ public class CMHomeApiService extends Service {
          for (Map.Entry<String, ProviderInfo> entry : mProviders.entrySet()) {
              ProviderInfo providerInfo = entry.getValue();
              Uri getCardsUri = Uri.parse("content://" + providerInfo.authority + "/" +
-                                         DATA_CARD_URI_PATH);
+                                         CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH);
              Uri getImagesUri = Uri.parse("content://" + providerInfo.authority + "/" +
-                                          DATA_CARD_IMAGE_URI_PATH);
+                                          CmHomeContract.DataCardImage.LIST_INSERT_UPDATE_URI_PATH);
              getContentResolver().registerContentObserver(getCardsUri,
                                                           true,
                                                           mContentObserver);
@@ -123,9 +125,9 @@ public class CMHomeApiService extends Service {
         for (Map.Entry<String, ProviderInfo> entry : mProviders.entrySet()) {
             ProviderInfo providerInfo = entry.getValue();
             Uri getCardsUri = Uri.parse("content://" + providerInfo.authority + "/" +
-                                        DATA_CARD_URI_PATH);
+                                        CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH);
             Uri getImagesUri = Uri.parse("content://" + providerInfo.authority + "/" +
-                                         DATA_CARD_IMAGE_URI_PATH);
+                                         CmHomeContract.DataCardImage.LIST_INSERT_UPDATE_URI_PATH);
             List<DataCard> cards = DataCard.getAllPublishedDataCards(this,
                                                                      getCardsUri,
                                                                      getImagesUri);
@@ -257,5 +259,11 @@ public class CMHomeApiService extends Service {
                        CmHomeContract.DataCardImage.SINGLE_ROW_DELETE_URI_PATH_MATCH,
                        DATA_CARD_IMAGE_DELETE_ITEM);
         return matcher;
+    }
+
+    public class LocalBinder extends Binder {
+        public CMHomeApiService getService() {
+            return CMHomeApiService.this;
+        }
     }
 }

@@ -7,7 +7,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
         <service
-            android:name="org.cyanogenmod.launcher.home.cmhomeapi.CMHomeApiService"
+            android:name=".CMHomeApiService"
             android:enabled="true"
             android:exported="false" >
         </service>
