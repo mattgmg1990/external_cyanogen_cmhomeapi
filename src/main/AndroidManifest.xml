@@ -8,8 +8,9 @@
         android:label="@string/app_name" >
         <service
             android:name=".CMHomeApiService"
+            android:permission="org.cyanogenmod.launcher.home.api.FEED_WRITE"
             android:enabled="true"
-            android:exported="false" >
+            android:exported="true" >
         </service>
     </application>
 

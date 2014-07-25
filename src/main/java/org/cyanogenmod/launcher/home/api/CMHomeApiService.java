@@ -21,6 +21,7 @@ import android.util.LongSparseArray;
 import org.cyanogenmod.launcher.home.api.cards.DataCard;
 import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -259,6 +260,16 @@ public class CMHomeApiService extends Service {
                        CmHomeContract.DataCardImage.SINGLE_ROW_DELETE_URI_PATH_MATCH,
                        DATA_CARD_IMAGE_DELETE_ITEM);
         return matcher;
+    }
+
+    public List<DataCard> getAllDataCards() {
+        List<DataCard> theCards = new ArrayList<DataCard>();
+        for (LongSparseArray<DataCard> cards : mCards.values()) {
+            for (int i = 0; i < cards.size(); i++) {
+                theCards.add(cards.valueAt(i));
+            }
+        }
+        return theCards;
     }
 
     public class LocalBinder extends Binder {
