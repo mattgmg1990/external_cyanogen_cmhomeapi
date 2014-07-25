@@ -63,7 +63,7 @@ public class CmHomeContentProvider extends ContentProvider {
                            CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH,
                            DATA_CARD_LIST);
         URI_MATCHER.addURI(CmHomeContract.AUTHORITY,
-                           CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH,
+                           CmHomeContract.DataCard.SINGLE_ROW_INSERT_UPDATE_URI_PATH,
                            DATA_CARD_ITEM);
         URI_MATCHER.addURI(CmHomeContract.AUTHORITY,
                            CmHomeContract.DataCardImage.LIST_INSERT_UPDATE_URI_PATH,
@@ -95,7 +95,7 @@ public class CmHomeContentProvider extends ContentProvider {
             case DATA_CARD_IMAGE_LIST:
                 queryBuilder.setTables(DATA_CARD_IMAGE_TABLE_NAME);
                 if (TextUtils.isEmpty(sortOrder)) {
-                    sortOrder = CmHomeContract.DataCard.SORT_ORDER_DEFAULT;
+                    sortOrder = CmHomeContract.DataCardImage.SORT_ORDER_DEFAULT;
                 }
                 break;
             case DATA_CARD_IMAGE_ITEM:
