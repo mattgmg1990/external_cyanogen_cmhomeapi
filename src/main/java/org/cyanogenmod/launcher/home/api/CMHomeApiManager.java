@@ -1,8 +1,7 @@
 package org.cyanogenmod.launcher.home.api;
 
-import android.app.Service;
 import android.content.ContentResolver;
-import android.content.Intent;
+import android.content.Context;
 import android.content.UriMatcher;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -11,10 +10,8 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IBinder;
 import android.util.Log;
 import android.util.LongSparseArray;
 
@@ -26,8 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CMHomeApiService extends Service {
-    private final static String TAG = "CMHomeApiService";
+public class CMHomeApiManager {
+    private final static String TAG = "CMHomeApiManager";
     private final static String FEED_READ_PERM = "org.cyanogenmod.launcher.home.api.FEED_READ";
     private final static String FEED_WRITE_PERM = "org.cyanogenmod.launcher.home.api.FEED_WRITE";
     private static final int    DATA_CARD_LIST               = 1;
@@ -37,8 +34,6 @@ public class CMHomeApiService extends Service {
     private static final int    DATA_CARD_IMAGE_ITEM         = 5;
     private static final int    DATA_CARD_IMAGE_DELETE_ITEM  = 6;
 
-    private final IBinder mBinder = new LocalBinder();
-
     private HashMap<String, ProviderInfo> mProviders = new HashMap<String, ProviderInfo>();
     private HashMap<String, LongSparseArray<DataCard>> mCards = new HashMap<String,
                                                                   LongSparseArray<DataCard>>();
@@ -46,22 +41,55 @@ public class CMHomeApiService extends Service {
     private CardContentObserver mContentObserver;
     private HandlerThread mContentObserverHandlerThread;
     private Handler mContentObserverHandler;
+    private ICMHomeApiUpdateListener mApiUpdateListener;
 
-    public CMHomeApiService() {
+    private Context mContext;
+
+    public CMHomeApiManager(Context context) {
+        mContext = context;
+        init();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
+    public boolean hasCard(String apiAuthority, long cardId) {
+        LongSparseArray<DataCard> cards = mCards.get(apiAuthority);
+        boolean hasCard = false;
+        if (cards != null) {
+            hasCard = cards.get(cardId) != null;
+        }
+        return hasCard;
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY;
+    public DataCard getCard(String apiAuthority, long cardId) {
+        LongSparseArray<DataCard> cards = mCards.get(apiAuthority);
+        DataCard card = null;
+        if (cards != null) {
+            card = cards.get(cardId);
+        }
+        return card;
     }
 
-    @Override
-    public void onCreate() {
+    public DataCard getCardWithGlobalId(String cardId) {
+        String[] idParts = cardId.split("/");
+        if (idParts.length > 1) {
+            String apiAuthority = idParts[0];
+            String idString = idParts[1];
+            try {
+                long id = Long.parseLong(idString);
+                return getCard(apiAuthority, id);
+            } catch (NumberFormatException e) {
+                // This card is either malformed or not a
+                // CmHome API card. Return null.
+            }
+        }
+
+        return null;
+    }
+
+    public void setApiUpdateListener(ICMHomeApiUpdateListener listener) {
+        mApiUpdateListener = listener;
+    }
+
+    public void init() {
         // Start up a background thread to handle any incoming changes.
         mContentObserverHandlerThread = new HandlerThread("CMHomeApiObserverThread");
         mContentObserverHandlerThread.start();
@@ -70,10 +98,9 @@ public class CMHomeApiService extends Service {
         new LoadExtensionsAndCardsAsync().execute();
     }
 
-    @Override
-    public void onDestroy() {
+    public void destroy() {
         mContentObserverHandlerThread.quitSafely();
-        getContentResolver().unregisterContentObserver(mContentObserver);
+        mContext.getContentResolver().unregisterContentObserver(mContentObserver);
     }
 
     private class LoadExtensionsAndCardsAsync extends AsyncTask<Void, Void, Void> {
@@ -89,8 +116,9 @@ public class CMHomeApiService extends Service {
     }
 
     private void loadAllExtensions() {
+        PackageManager pm = mContext.getPackageManager();
         List<PackageInfo> providerPackages =
-                getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS);
+                pm.getInstalledPackages(PackageManager.GET_PROVIDERS);
         for (PackageInfo packageInfo : providerPackages) {
             ProviderInfo[] providers = packageInfo.providers;
             if (providers != null) {
@@ -107,16 +135,17 @@ public class CMHomeApiService extends Service {
     private void trackAllExtensions() {
         mContentObserver = new CardContentObserver(mContentObserverHandler);
 
+        ContentResolver contentResolver = mContext.getContentResolver();
          for (Map.Entry<String, ProviderInfo> entry : mProviders.entrySet()) {
              ProviderInfo providerInfo = entry.getValue();
              Uri getCardsUri = Uri.parse("content://" + providerInfo.authority + "/" +
                                          CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH);
              Uri getImagesUri = Uri.parse("content://" + providerInfo.authority + "/" +
                                           CmHomeContract.DataCardImage.LIST_INSERT_UPDATE_URI_PATH);
-             getContentResolver().registerContentObserver(getCardsUri,
+             contentResolver.registerContentObserver(getCardsUri,
                                                           true,
                                                           mContentObserver);
-             getContentResolver().registerContentObserver(getImagesUri,
+             contentResolver.registerContentObserver(getImagesUri,
                                                           true,
                                                           mContentObserver);
         }
@@ -129,7 +158,7 @@ public class CMHomeApiService extends Service {
                                         CmHomeContract.DataCard.LIST_INSERT_UPDATE_URI_PATH);
             Uri getImagesUri = Uri.parse("content://" + providerInfo.authority + "/" +
                                          CmHomeContract.DataCardImage.LIST_INSERT_UPDATE_URI_PATH);
-            List<DataCard> cards = DataCard.getAllPublishedDataCards(this,
+            List<DataCard> cards = DataCard.getAllPublishedDataCards(mContext,
                                                                      getCardsUri,
                                                                      getImagesUri);
             // For quick access, build a HashMap using the id as the key
@@ -191,11 +220,11 @@ public class CMHomeApiService extends Service {
 
     private void onCardInsertOrUpdate(Uri uri) {
         String authority = uri.getAuthority();
-        long id = Long.getLong(uri.getLastPathSegment());
+        String idString = uri.getLastPathSegment();
+        long id = Long.parseLong(idString);
         LongSparseArray<DataCard> cards = mCards.get(authority);
-        boolean cardExists = false;
 
-        ContentResolver contentResolver = getContentResolver();
+        ContentResolver contentResolver = mContext.getContentResolver();
         Cursor cursor = contentResolver.query(uri,
                                               CmHomeContract.DataCard.PROJECTION_ALL,
                                               null,
@@ -204,20 +233,21 @@ public class CMHomeApiService extends Service {
 
         if (cursor.getCount() > 0) {
             cursor.moveToFirst();
-            DataCard theNewCard = DataCard.createFromCurrentCursorRow(cursor);
+            DataCard theNewCard = DataCard.createFromCurrentCursorRow(cursor, authority);
             if (cards == null) {
                 cards = new LongSparseArray<DataCard>();
                 cards.put(theNewCard.getId(), theNewCard);
                 mCards.put(authority, cards);
             } else {
-                cardExists = cards.get(id) != null;
                 cards.put(theNewCard.getId(), theNewCard);
             }
+
+            // Update listeners that a card has changed.
+            mApiUpdateListener.onCardInsertOrUpdate(theNewCard.getGlobalId());
         }
 
         cursor.close();
 
-        // TODO notify observers of card update
     }
 
     private void onCardDelete(Uri uri) {
@@ -225,10 +255,12 @@ public class CMHomeApiService extends Service {
         LongSparseArray<DataCard> cards = mCards.get(authority);
         if (cards != null) {
             long id = Long.getLong(uri.getLastPathSegment());
+            String globalId = cards.get(id).getGlobalId();
             cards.delete(id);
-        }
 
-        // TODO notify observers of card delete
+            // Update listeners that a card has been deleted
+            mApiUpdateListener.onCardDelete(globalId);
+        }
     }
 
     private void onCardImageInsertOrUpdate(Uri uri) {
@@ -272,9 +304,8 @@ public class CMHomeApiService extends Service {
         return theCards;
     }
 
-    public class LocalBinder extends Binder {
-        public CMHomeApiService getService() {
-            return CMHomeApiService.this;
-        }
+    public interface ICMHomeApiUpdateListener {
+        public void onCardInsertOrUpdate(String globalId);
+        public void onCardDelete(String globalId);
     }
 }

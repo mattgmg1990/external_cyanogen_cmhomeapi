@@ -284,6 +284,12 @@ public class DataCard extends PublishableCard {
                                         CmHomeContract.DataCardImage.CONTENT_URI);
     }
 
+    public static DataCard createFromCurrentCursorRow(Cursor cursor, String authority) {
+        DataCard card = createFromCurrentCursorRow(cursor);
+        card.setAuthority(authority);
+        return card;
+    }
+
     public static DataCard createFromCurrentCursorRow(Cursor cursor) {
         DataCard dataCard = new DataCard();
 
@@ -355,7 +361,8 @@ public class DataCard extends PublishableCard {
 
         List<DataCard> allCards = new ArrayList<DataCard>();
         while (cursor.moveToNext()) {
-            DataCard dataCard = createFromCurrentCursorRow(cursor);
+            DataCard dataCard = createFromCurrentCursorRow(cursor,
+                                                           dataCardContentUri.getAuthority());
             allCards.add(dataCard);
         }
 

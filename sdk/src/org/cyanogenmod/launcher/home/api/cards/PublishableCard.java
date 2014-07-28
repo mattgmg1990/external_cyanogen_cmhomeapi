@@ -15,6 +15,7 @@ import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
 public abstract class PublishableCard {
     private long mId = -1;
     protected CmHomeContract.ICmHomeContract mICmHomeContract;
+    private String mAuthority;
 
     public PublishableCard(CmHomeContract.ICmHomeContract contract) {
         mICmHomeContract = contract;
@@ -26,6 +27,18 @@ public abstract class PublishableCard {
 
     protected void setId(long id) {
         mId = id;
+    }
+
+    public void setAuthority(String authority) {
+        mAuthority = authority;
+    }
+
+    public String getAuthority() {
+        return mAuthority;
+    }
+
+    public String getGlobalId() {
+        return mAuthority + "/" + mId;
     }
 
     public boolean publish(Context context) {
