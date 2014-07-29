@@ -10,8 +10,11 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.LongSparseArray;
 
@@ -27,12 +30,15 @@ public class CMHomeApiManager {
     private final static String TAG = "CMHomeApiManager";
     private final static String FEED_READ_PERM = "org.cyanogenmod.launcher.home.api.FEED_READ";
     private final static String FEED_WRITE_PERM = "org.cyanogenmod.launcher.home.api.FEED_WRITE";
-    private static final int    DATA_CARD_LIST               = 1;
-    private static final int    DATA_CARD_ITEM               = 2;
-    private static final int    DATA_CARD_DELETE_ITEM        = 3;
-    private static final int    DATA_CARD_IMAGE_LIST         = 4;
-    private static final int    DATA_CARD_IMAGE_ITEM         = 5;
-    private static final int    DATA_CARD_IMAGE_DELETE_ITEM  = 6;
+    private static final int    DATA_CARD_LIST                = 1;
+    private static final int    DATA_CARD_ITEM                = 2;
+    private static final int    DATA_CARD_DELETE_ITEM         = 3;
+    private static final int    DATA_CARD_IMAGE_LIST          = 4;
+    private static final int    DATA_CARD_IMAGE_ITEM          = 5;
+    private static final int    DATA_CARD_IMAGE_DELETE_ITEM   = 6;
+    private static final int    UPDATE_DATA_CARD_MESSAGE_WHAT = 0;
+    private static final int    DELETE_DATA_CARD_MESSAGE_WHAT = 1;
+    private static final String CARD_MESSAGE_BUNDLE_ID_KEY    = "CardId";
 
     private HashMap<String, ProviderInfo> mProviders = new HashMap<String, ProviderInfo>();
     private HashMap<String, LongSparseArray<DataCard>> mCards = new HashMap<String,
@@ -42,6 +48,31 @@ public class CMHomeApiManager {
     private HandlerThread mContentObserverHandlerThread;
     private Handler mContentObserverHandler;
     private ICMHomeApiUpdateListener mApiUpdateListener;
+
+    private Handler mUiThreadHandler = new Handler() {
+        @Override
+        public
+        void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            String globalId = msg.getData().getString(CARD_MESSAGE_BUNDLE_ID_KEY);
+
+            if (!TextUtils.isEmpty(globalId)) {
+                switch (msg.what) {
+                    case UPDATE_DATA_CARD_MESSAGE_WHAT:
+                        // Update listeners that a card has changed.
+                        mApiUpdateListener.onCardInsertOrUpdate(globalId);
+                        break;
+                    case DELETE_DATA_CARD_MESSAGE_WHAT:
+                        globalId = msg.getData().getString(CARD_MESSAGE_BUNDLE_ID_KEY);
+                        // Update listeners that a card has been deleted
+                        mApiUpdateListener.onCardDelete(globalId);
+                        break;
+                    default:
+                        // nothing
+                }
+            }
+        }
+    };
 
     private Context mContext;
 
@@ -242,24 +273,33 @@ public class CMHomeApiManager {
                 cards.put(theNewCard.getId(), theNewCard);
             }
 
-            // Update listeners that a card has changed.
-            mApiUpdateListener.onCardInsertOrUpdate(theNewCard.getGlobalId());
+            Message uiMessage = new Message();
+            uiMessage.what = UPDATE_DATA_CARD_MESSAGE_WHAT;
+            Bundle messageData = new Bundle();
+            messageData.putString(CARD_MESSAGE_BUNDLE_ID_KEY, theNewCard.getGlobalId());
+            uiMessage.setData(messageData);
+
+            mUiThreadHandler.sendMessage(uiMessage);
         }
 
         cursor.close();
-
     }
 
     private void onCardDelete(Uri uri) {
         String authority = uri.getAuthority();
         LongSparseArray<DataCard> cards = mCards.get(authority);
         if (cards != null) {
-            long id = Long.getLong(uri.getLastPathSegment());
+            long id = Long.parseLong(uri.getLastPathSegment());
             String globalId = cards.get(id).getGlobalId();
             cards.delete(id);
 
-            // Update listeners that a card has been deleted
-            mApiUpdateListener.onCardDelete(globalId);
+            Message uiMessage = new Message();
+            uiMessage.what = DELETE_DATA_CARD_MESSAGE_WHAT;
+            Bundle messageData = new Bundle();
+            messageData.putString(CARD_MESSAGE_BUNDLE_ID_KEY, globalId);
+            uiMessage.setData(messageData);
+
+            mUiThreadHandler.sendMessage(uiMessage);
         }
     }
 
