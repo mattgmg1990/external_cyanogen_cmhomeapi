@@ -242,7 +242,7 @@ public class CmHomeContentProvider extends ContentProvider {
         if (deleteCount == 1) {
             if(uriMatch == DATA_CARD_ITEM) {
                 // Notifies for a delete
-                getUriForId(Long.getLong(idStr),
+                getUriForId(Long.parseLong(idStr),
                             Uri.withAppendedPath(CmHomeContract.CONTENT_URI,
                                     CmHomeContract.DataCard.SINGLE_ROW_DELETE_URI_PATH));
             }
