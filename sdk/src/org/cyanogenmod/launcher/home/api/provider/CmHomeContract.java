@@ -12,6 +12,7 @@ public class CmHomeContract {
             Uri.parse("content://" + AUTHORITY);
 
     public static final class DataCard implements BaseColumns, ICmHomeContract {
+        public static final String INTERNAL_ID_COL = "internal_id";
         public static final String SUBJECT_COL = "subject";
         public static final String DATE_CONTENT_CREATED_COL = "date_content_created";
         public static final String DATE_CREATED_COL = "date_created";
@@ -64,6 +65,7 @@ public class CmHomeContract {
     }
 
     public static final class DataCardImage implements BaseColumns, ICmHomeContract {
+        public static final String INTERNAL_ID_COL = "internal_id";
         public static final String DATA_CARD_ID_COL = "data_card_id";
         public static final String IMAGE_URI_COL = "image_uri";
 

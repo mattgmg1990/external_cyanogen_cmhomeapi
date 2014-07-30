@@ -17,6 +17,7 @@ public class CmHomeDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATA_CARD_TABLE_CREATE =
             "CREATE TABLE " + DATA_CARD_TABLE_NAME +
             "(" + CmHomeContract.DataCard._ID + " INTEGER PRIMARY KEY NOT NULL," +
+            CmHomeContract.DataCard.INTERNAL_ID_COL + " TEXT NOT NULL," +
             CmHomeContract.DataCard.SUBJECT_COL + " TEXT NOT NULL," +
             CmHomeContract.DataCard.DATE_CONTENT_CREATED_COL + " TEXT NOT NULL," +
             CmHomeContract.DataCard.DATE_CREATED_COL + " TEXT DEFAULT CURRENT_TIMESTAMP " +
@@ -46,11 +47,12 @@ public class CmHomeDatabaseHelper extends SQLiteOpenHelper {
     public static final String DATA_CARD_IMAGE_TABLE_NAME   = "DataCardImage";
     private static final String DATA_CARD_IMAGE_TABLE_CREATE =
             "CREATE TABLE " + DATA_CARD_IMAGE_TABLE_NAME +
-            "(_id INTEGER PRIMARY KEY," +
-            "data_card_id INTEGER NOT NULL," +
-            "image_uri TEXT NOT NULL," +
-            "FOREIGN KEY(data_card_id) REFERENCES " + DATA_CARD_TABLE_NAME +
-            "(_id));";
+            "(" + CmHomeContract.DataCardImage._ID + " INTEGER PRIMARY KEY," +
+            CmHomeContract.DataCardImage.DATA_CARD_ID_COL + " INTEGER NOT NULL," +
+            CmHomeContract.DataCardImage.INTERNAL_ID_COL + " TEXT NOT NULL," +
+            CmHomeContract.DataCardImage.IMAGE_URI_COL + " TEXT NOT NULL," +
+            "FOREIGN KEY(" + CmHomeContract.DataCardImage.DATA_CARD_ID_COL  + ") REFERENCES " +
+            DATA_CARD_TABLE_NAME + "(" + CmHomeContract.DataCard._ID  + "));";
 
     private static final String DROP_TABLE_STATEMENT = "DROP TABLE IF EXISTS";
 

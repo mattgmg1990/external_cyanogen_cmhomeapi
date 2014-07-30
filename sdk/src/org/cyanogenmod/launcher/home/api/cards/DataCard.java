@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
 
 import java.util.ArrayList;
@@ -16,9 +17,11 @@ public class DataCard extends PublishableCard {
     private static final int PRIORITY_HIGH = 1;
     private static final int PRIORITY_MID  = 2;
     private static final int PRIORITY_LOW  = 3;
+    private static final String TAG = "DataCard";
     private static final CmHomeContract.ICmHomeContract sContract =
             new CmHomeContract.DataCard();
 
+    private String mInternalId;
     private String mSubject;
     private Date   mContentCreatedDate;
     private Date   mCreatedDate;
@@ -50,6 +53,14 @@ public class DataCard extends PublishableCard {
     public void addDataCardImage(Uri uri) {
         DataCardImage image = new DataCardImage(getId(), uri);
         mImages.add(image);
+    }
+
+    public void setInternalId(String internalId) {
+        mInternalId = internalId;
+    }
+
+    public String getInternalId() {
+        return mInternalId;
     }
 
     private void setCreatedDate(Date date) {
@@ -233,6 +244,7 @@ public class DataCard extends PublishableCard {
     protected ContentValues getContentValues() {
         ContentValues values = new ContentValues();
 
+        values.put(CmHomeContract.DataCard.INTERNAL_ID_COL, getInternalId());
         values.put(CmHomeContract.DataCard.SUBJECT_COL, getSubject());
 
         if (getContentCreatedDate() != null) {
@@ -294,6 +306,8 @@ public class DataCard extends PublishableCard {
         DataCard dataCard = new DataCard();
 
         dataCard.setId(cursor.getInt(cursor.getColumnIndex(CmHomeContract.DataCard._ID)));
+        dataCard.setInternalId(cursor.getString(cursor.getColumnIndex(CmHomeContract.DataCard
+                                                                      .INTERNAL_ID_COL)));
         long createdTime = cursor.getLong(cursor.getColumnIndex(CmHomeContract.DataCard
                                                                 .DATE_CREATED_COL));
         dataCard.setCreatedDate(new Date(createdTime));
@@ -346,6 +360,10 @@ public class DataCard extends PublishableCard {
             dataCard.setAction2Uri(Uri.parse(action2UriString));
         }
 
+        int priority = cursor.getInt(cursor.getColumnIndex(CmHomeContract.DataCard
+                                                                        .PRIORITY_COL));
+        dataCard.setPriority(priority);
+
         return dataCard;
     }
 
@@ -353,20 +371,30 @@ public class DataCard extends PublishableCard {
                                                           Uri dataCardContentUri,
                                                           Uri dataCardImageContentUri) {
         ContentResolver contentResolver = context.getContentResolver();
-        Cursor cursor = contentResolver.query(dataCardContentUri,
-                                              CmHomeContract.DataCard.PROJECTION_ALL,
-                                              null,
-                                              null,
-                                              CmHomeContract.DataCard.DATE_CREATED_COL);
-
         List<DataCard> allCards = new ArrayList<DataCard>();
-        while (cursor.moveToNext()) {
-            DataCard dataCard = createFromCurrentCursorRow(cursor,
-                                                           dataCardContentUri.getAuthority());
-            allCards.add(dataCard);
+        Cursor cursor = null;
+        try {
+            cursor = contentResolver.query(dataCardContentUri,
+                                           CmHomeContract.DataCard.PROJECTION_ALL,
+                                           null,
+                                           null,
+                                           CmHomeContract.DataCard.DATE_CREATED_COL);
+        // Catching all Exceptions, since we can't be sure what the extension will do.
+        } catch (Exception e) {
+            Log.e(TAG, "Error querying for DataCards, ContentProvider threw an exception for uri:" +
+                       " " + dataCardContentUri, e);
         }
 
-        cursor.close();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                DataCard dataCard = createFromCurrentCursorRow(cursor,
+                                                               dataCardContentUri.getAuthority());
+                allCards.add(dataCard);
+            }
+
+            cursor.close();
+        }
+
 
         // Retrieve all DataCardImages for each DataCard.
         // Doing this in a separate loop since each iteration
