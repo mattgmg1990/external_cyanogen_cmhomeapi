@@ -10,7 +10,7 @@ import org.cyanogenmod.launcher.home.api.provider.CmHomeContract;
  * Creates the SQLite database that backs CMHomeContentProvider.
  */
 public class CmHomeDatabaseHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME          = "CmHomeAPI";
+    private static final String DATABASE_NAME          = "CmHomeAPI.db";
     private static final String TAG                    = "CmHomeDatabaseHelper";
     private static final int    DATABASE_VERSION       = 1;
     public static final String DATA_CARD_TABLE_NAME    = "DataCard";

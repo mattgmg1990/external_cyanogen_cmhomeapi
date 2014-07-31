@@ -45,10 +45,10 @@ public class CmHomeContract {
                 "/org.cyanogenmod.home.api.datacard";
 
         public static final String[] PROJECTION_ALL =
-                {_ID, SUBJECT_COL, DATE_CONTENT_CREATED_COL, DATE_CREATED_COL, LAST_MODIFIED_COL,
-                 CONTENT_SOURCE_IMAGE_URI_COL, AVATAR_IMAGE_URI_COL, TITLE_TEXT_COL,
-                 SMALL_TEXT_COL, BODY_TEXT_COL, ACTION_1_TEXT_COL, ACTION_1_URI_COL,
-                 ACTION_2_TEXT_COL, ACTION_2_URI_COL};
+                {_ID, INTERNAL_ID_COL, SUBJECT_COL, DATE_CONTENT_CREATED_COL, DATE_CREATED_COL,
+                 LAST_MODIFIED_COL, CONTENT_SOURCE_IMAGE_URI_COL, AVATAR_IMAGE_URI_COL,
+                 TITLE_TEXT_COL, SMALL_TEXT_COL, BODY_TEXT_COL, ACTION_1_TEXT_COL,
+                 ACTION_1_URI_COL, ACTION_2_TEXT_COL, ACTION_2_URI_COL, PRIORITY_COL};
 
         public static final String SORT_ORDER_DEFAULT =
                 PRIORITY_COL + " ASC";
@@ -86,7 +86,7 @@ public class CmHomeContract {
                 "/org.cyanogenmod.home.api.datacardimage";
 
         public static final String[] PROJECTION_ALL =
-                {_ID, DATA_CARD_ID_COL, IMAGE_URI_COL};
+                {_ID, INTERNAL_ID_COL, DATA_CARD_ID_COL, IMAGE_URI_COL};
 
         public static final String SORT_ORDER_DEFAULT =
                 DATA_CARD_ID_COL + " ASC";
